@@ -7,17 +7,16 @@ import asyncio
 
 import time
 
-from message import send_hello, setup_notifications
+from message import CubeComm
 
-CHARACTERISTIC = "fff6"
+async def main_loop(client, mac_address):
+    cube_comm = CubeComm()
+    cube_comm.set_client(client)
 
-MAC_ADDRESS = None
-
-async def main_loop(client):
-    await setup_notifications(client)
+    await cube_comm.setup_notifications()
 
     print("Sending hello")
-    await send_hello(client, MAC_ADDRESS)
+    await cube_comm.send_hello(mac_address)
 
     while True:
         await asyncio.sleep(0.1)
@@ -28,9 +27,7 @@ async def connect(address):
 
     async with BleakClient(device) as client:
         print("Connected")
-        global MAC_ADDRESS
-        MAC_ADDRESS = address
-        await main_loop(client)
+        await main_loop(client, address)
 
 async def scan_for_devices():
     print("Scanning...")
