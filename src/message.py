@@ -3,11 +3,14 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from Cryptodome.Cipher import AES
 
+from cubestate import CubeState
+
 AES_KEY = bytearray([87, 177, 249, 171, 205, 90, 232, 167, 156, 185, 140, 231, 87, 140, 81, 8])
 CHARACTERISTIC = "fff6"
 
 class CubeComm:
-    client : BleakClient
+    client: BleakClient
+    handshake_done = False
 
     def set_client(self, client):
         self.client = client
@@ -43,7 +46,22 @@ class CubeComm:
         print("Recieved message")
         print(decrypted_data.hex(" "))
 
-        await self.send_ack(decrypted_data)
+        if decrypted_data[2] != 0x04:
+            print("Acking")
+            await self.send_ack(decrypted_data)
+
+        if not self.handshake_done:
+            print("Sending sync")
+            self.handshake_done = True
+            # Only send on first try
+            await self.send_state_sync(CubeState())
+        else:
+            if decrypted_data[2] == 0x03:
+                state = CubeState()
+                state.decode(decrypted_data[7:34])
+                state.print_state_bytes()
+                if state.is_solved():
+                    print("Solved!")
 
     async def setup_notifications(self):
         await self.client.start_notify(CHARACTERISTIC, self.notification_callback)
@@ -54,6 +72,17 @@ class CubeComm:
         encrypted_data = self.encrypt(data)
 
         await self.client.write_gatt_char(CHARACTERISTIC, encrypted_data)
+
+    async def send_state_sync(self, state: CubeState):
+        data = [0xfe, 0x26]
+        data += [0x04, 0x17, 0x88, 0x8b, 0x31]
+        data += state.encode()
+        data += [0x00, 0x00]
+        data += self.calculate_crc(data)
+
+        data = self.pad(data)
+
+        await self.write_data(bytearray(data))
 
     async def send_ack(self, message):
         data = [0xfe, 0x09]
