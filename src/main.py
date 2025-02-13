@@ -7,42 +7,17 @@ import asyncio
 
 import time
 
-from Cryptodome.Cipher import AES
+from message import send_hello, setup_notifications
 
-AES_KEY = bytearray([87, 177, 249, 171, 205, 90, 232, 167, 156, 185, 140, 231, 87, 140, 81, 8])
 CHARACTERISTIC = "fff6"
 
 MAC_ADDRESS = None
 
-def encrypt(data):
-    cipher = AES.new(AES_KEY, AES.MODE_ECB)
-    return cipher.encrypt(data)
-
-def decrypt(data):
-    cipher = AES.new(AES_KEY, AES.MODE_ECB)
-    return cipher.decrypt(data)
-
-async def write_data(client, data):
-    encrypted_data = encrypt(data)
-
-    await client.write_gatt_char(CHARACTERISTIC, encrypted_data)
-
-def notification_callback(characteristic: BleakGATTCharacteristic, data: bytearray):
-    decrypted_data = decrypt(data)
-    print(decrypted_data)
-
 async def main_loop(client):
-    await client.start_notify(CHARACTERISTIC, notification_callback)
-
-    data = [0xfe, 0x15]
-    data += [00,00,00,00,00,00,00,00,00,00,00]
-    for i in reversed(MAC_ADDRESS.split(sep=":")):
-        data += [int(f"0x{i}", 16)]
-    data += [0x50, 0xb4]
-    data += [0,0,0,0,0,0,0,0,0,0,0]
+    await setup_notifications(client)
 
     print("Sending hello")
-    await write_data(client, bytearray(data))
+    await send_hello(client, MAC_ADDRESS)
 
     while True:
         await asyncio.sleep(0.1)
