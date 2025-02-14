@@ -9,25 +9,19 @@ import time
 
 from message import CubeComm
 
-async def main_loop(client, mac_address):
+from window import MainWindow
+
+async def main_loop(mac_address):
     cube_comm = CubeComm()
-    cube_comm.set_client(client)
 
-    await cube_comm.setup_notifications()
+    window = MainWindow(cube_comm)
+    window.set_mac_address(mac_address)
 
-    print("Sending hello")
-    await cube_comm.send_hello(mac_address)
+    while not window.close:
+        window.render()
 
-    while True:
         await asyncio.sleep(0.1)
 
-async def connect(address):
-    print(f"Connecting to device {address}")
-    device = await BleakScanner.find_device_by_address(address)
-
-    async with BleakClient(device) as client:
-        print("Connected")
-        await main_loop(client, address)
 
 async def scan_for_devices():
     print("Scanning...")
@@ -40,4 +34,5 @@ async def scan_for_devices():
 
 if __name__ == "__main__":
     with open('address.txt') as f:
-        asyncio.run(connect(f.read().replace("\n", "")))
+        mac_address = f.read().replace("\n", "")
+        asyncio.run(main_loop(mac_address))

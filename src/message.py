@@ -1,4 +1,4 @@
-from bleak import BleakClient
+from bleak import BleakClient, BleakScanner
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from Cryptodome.Cipher import AES
@@ -9,11 +9,29 @@ AES_KEY = bytearray([87, 177, 249, 171, 205, 90, 232, 167, 156, 185, 140, 231, 8
 CHARACTERISTIC = "fff6"
 
 class CubeComm:
-    client: BleakClient
+    device = None
+    client: BleakClient = None
+    address = None
     handshake_done = False
 
-    def set_client(self, client):
-        self.client = client
+    async def connect(self, address):
+        print(f"Connecting to device {address}")
+
+        self.address = address
+        self.device = await BleakScanner.find_device_by_address(address)
+        self.client = BleakClient(self.device)
+        await self.client.connect()
+
+        self.handshake_done = False
+        await self.setup_notifications()
+        await self.send_hello()
+
+        print("Connected")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if client is not None:
+            print("Closing connection")
+            asyncio.run(client.disconnect())
 
     def encrypt(self, data):
         cipher = AES.new(AES_KEY, AES.MODE_ECB)
@@ -93,10 +111,10 @@ class CubeComm:
 
         await self.write_data(bytearray(data))
 
-    async def send_hello(self, address):
+    async def send_hello(self):
         data = [0xfe, 0x15]
         data += [00,00,00,00,00,00,00,00,00,00,00]
-        for i in reversed(address.split(sep=":")):
+        for i in reversed(self.address.split(sep=":")):
             data += [int(f"0x{i}", 16)]
         data += self.calculate_crc(data)
 
