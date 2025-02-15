@@ -3,6 +3,8 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from Cryptodome.Cipher import AES
 
+from tkinter import StringVar
+
 from cubestate import CubeState
 
 AES_KEY = bytearray([87, 177, 249, 171, 205, 90, 232, 167, 156, 185, 140, 231, 87, 140, 81, 8])
@@ -12,11 +14,35 @@ class CubeComm:
     device = None
     client: BleakClient = None
     address = None
+    connection_status = None
     handshake_done = False
+
+    def __init__(self, connection_status):
+        self.connection_status = connection_status
+        self.connection_status.set("Not connected")
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if client is not None:
+            print("Closing connection")
+            asyncio.run(client.disconnect())
+
+    async def scan_and_connect(self):
+        self.connection_status.set("Scanning")
+        devices = await self.scan_for_devices()
+
+        for d in devices.values():
+            name = d[0].name
+            if name is not None and "QY-QYSC" in name:
+                await self.connect(d[0].address)
+                return
+
+        print("No devices found")
+        self.connection_status.set("Not connected")
 
     async def connect(self, address):
         print(f"Connecting to device {address}")
 
+        self.connection_status.set("Connecting")
         self.address = address
         self.device = await BleakScanner.find_device_by_address(address)
         self.client = BleakClient(self.device)
@@ -26,12 +52,15 @@ class CubeComm:
         await self.setup_notifications()
         await self.send_hello()
 
+        self.connection_status.set("Connected")
         print("Connected")
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if client is not None:
-            print("Closing connection")
-            asyncio.run(client.disconnect())
+    async def scan_for_devices(self):
+        print("Scanning...")
+
+        devices = await BleakScanner.discover(return_adv=True)
+
+        return devices
 
     def encrypt(self, data):
         cipher = AES.new(AES_KEY, AES.MODE_ECB)
