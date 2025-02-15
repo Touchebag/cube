@@ -2,6 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 
 import asyncio
+import time
 
 from message import CubeComm
 from cubestate import CubeState
@@ -9,9 +10,11 @@ from cubestate import CubeState
 import global_state
 
 class MainWindow(tk.Tk):
-    connection_status = None
     cube_frame = None
     cube_faces = []
+
+    ready_to_solve = False
+    solve_start_time = None
 
     # Used to close loop and shutdown program
     close = False
@@ -19,6 +22,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Cube")
+        self.root.geometry("300x200")
         self.root.protocol("WMI_DELETE_WINDOW", self.shutdown)
 
         self.connection_status = tk.StringVar(value="N/A")
@@ -31,6 +35,7 @@ class MainWindow(tk.Tk):
         ttk.Label(main_frame, textvariable=self.connection_status).grid(column=1, row=0)
 
         ttk.Button(main_frame, text="Sync to solved", command=self.sync_to_solved).grid(column=0, row=1)
+        ttk.Button(main_frame, text="Start solve", command=self.start_solve).grid(column=1, row=1)
 
         # Cube faces
         self.cube_frame = tk.Frame(main_frame)
@@ -57,17 +62,35 @@ class MainWindow(tk.Tk):
 
         self.new_cube_state(CubeState())
 
+        self.total_time = tk.StringVar(value="N/A")
+        ttk.Label(main_frame, textvariable=self.total_time).grid(column=0, row=4)
+
     def sync_to_solved(self):
         if global_state.cube_comm is not None:
             asyncio.create_task(global_state.cube_comm.send_state_sync(CubeState()))
 
+    def start_solve(self):
+        print("Solve mode, make a move to start timer")
+        self.ready_to_solve = True
+
     def new_cube_state(self, state: CubeState):
+        if self.ready_to_solve:
+            self.solve_start_time = time.time()
+            self.ready_to_solve = False
+
+        if self.solve_start_time is not None and state.is_solved():
+            self.total_time.set(self.print_time(time.time() - self.solve_start_time))
+            self.solve_start_time = None
+
         self.draw_cube_face(self.cube_faces[0], state.white)
         self.draw_cube_face(self.cube_faces[1], state.orange)
         self.draw_cube_face(self.cube_faces[2], state.green)
         self.draw_cube_face(self.cube_faces[3], state.red)
         self.draw_cube_face(self.cube_faces[4], state.blue)
         self.draw_cube_face(self.cube_faces[5], state.yellow)
+
+    def print_time(self, time):
+        return f"{int(time)}.{int((time % 1) * 100)}s"
 
     def draw_cube_face(self, canvas: tk.Canvas, face):
         i = 0
@@ -88,5 +111,7 @@ class MainWindow(tk.Tk):
         self.root.destroy()
 
     def render(self):
+        if (self.solve_start_time is not None):
+            self.total_time.set(self.print_time(time.time() - self.solve_start_time))
         self.root.update()
 
