@@ -1,4 +1,21 @@
 class CubeState:
+    int_color_dict = {
+            0: "orange",
+            1: "red",
+            2: "yellow",
+            3: "white",
+            4: "green",
+            5: "blue"
+        }
+    color_int_dict = {
+            "orange": 0,
+            "red":    1,
+            "yellow": 2,
+            "white":  3,
+            "green":  4,
+            "blue":   5
+        }
+
     white  = [0x03] * 9
     red    = [0x01] * 9
     green  = [0x04] * 9

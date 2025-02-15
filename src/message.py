@@ -5,6 +5,7 @@ from Cryptodome.Cipher import AES
 
 from tkinter import StringVar
 
+import global_state
 from cubestate import CubeState
 
 AES_KEY = bytearray([87, 177, 249, 171, 205, 90, 232, 167, 156, 185, 140, 231, 87, 140, 81, 8])
@@ -103,10 +104,13 @@ class CubeComm:
             # Only send on first try
             await self.send_state_sync(CubeState())
         else:
-            if decrypted_data[2] == 0x03:
+            if decrypted_data[2] == 0x03 or decrypted_data[2] == 0x04:
                 state = CubeState()
                 state.decode(decrypted_data[7:34])
                 state.print_state_bytes()
+
+                global_state.main_window.new_cube_state(state)
+
                 if state.is_solved():
                     print("Solved!")
 
