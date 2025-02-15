@@ -98,6 +98,9 @@ class CubeComm:
             print("Acking")
             await self.send_ack(decrypted_data)
 
+        if len(decrypted_data) > 35:
+            global_state.main_window.set_battery_level(decrypted_data[35])
+
         if not self.handshake_done:
             print("Sending sync")
             self.handshake_done = True
@@ -107,12 +110,9 @@ class CubeComm:
             if decrypted_data[2] == 0x03 or decrypted_data[2] == 0x04:
                 state = CubeState()
                 state.decode(decrypted_data[7:34])
-                state.print_state_bytes()
 
                 global_state.main_window.new_cube_state(state)
 
-                if state.is_solved():
-                    print("Solved!")
 
     async def setup_notifications(self):
         await self.client.start_notify(CHARACTERISTIC, self.notification_callback)

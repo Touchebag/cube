@@ -31,8 +31,10 @@ class MainWindow(tk.Tk):
         main_frame = ttk.Frame(self.root, padding=5)
         main_frame.grid(column=0, row=0)
 
-        ttk.Label(main_frame, text="Status: ").grid(column=0, row=0)
-        ttk.Label(main_frame, textvariable=self.connection_status).grid(column=1, row=0)
+        ttk.Label(main_frame, textvariable=self.connection_status).grid(column=0, row=0)
+
+        self.battery_level = tk.StringVar(value="Battery: N/A")
+        ttk.Label(main_frame, textvariable=self.battery_level).grid(column=1, row=0)
 
         ttk.Button(main_frame, text="Sync to solved", command=self.sync_to_solved).grid(column=0, row=1)
         ttk.Button(main_frame, text="Start solve", command=self.start_solve).grid(column=1, row=1)
@@ -92,6 +94,9 @@ class MainWindow(tk.Tk):
     def print_time(self, time):
         return f"{int(time)}.{int((time % 1) * 100)}s"
 
+    def set_battery_level(self, level: int):
+        self.battery_level.set(f"Battery: {level}%")
+
     def draw_cube_face(self, canvas: tk.Canvas, face):
         i = 0
 
@@ -103,8 +108,6 @@ class MainWindow(tk.Tk):
 
                 canvas.create_rectangle(x, y, x + 9, y + 9, fill=color)
                 i += 1
-
-        canvas.create_line(0,0, 0,30, 30,30, 30,0, 0,0)
 
     def shutdown(self):
         self.close = True
