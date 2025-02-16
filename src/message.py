@@ -109,7 +109,10 @@ class CubeComm:
         else:
             if decrypted_data[2] == 0x03 or decrypted_data[2] == 0x04:
                 state = CubeState()
-                state.decode(decrypted_data[7:34])
+
+                if len(decrypted_data) > 91 and decrypted_data[91] != 1:
+                    # If needs ack then we should ignore response state and assume solved
+                    state.decode(decrypted_data[7:34])
 
                 global_state.main_window.new_cube_state(state)
 
