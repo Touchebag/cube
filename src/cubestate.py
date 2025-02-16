@@ -33,6 +33,30 @@ class CubeState:
             (self.blue   == ([0x05] * 9))
         )
 
+    def is_cross_solved(self):
+        return (self.white[1]  == 0x03 and
+                self.white[3]  == 0x03 and
+                self.white[5]  == 0x03 and
+                self.white[7]  == 0x03 and
+                self.red[1]    == 0x01 and
+                self.green[1]  == 0x04 and
+                self.orange[1] == 0x00 and
+                self.blue[1]   == 0x05)
+
+    def is_f2l_solved(self):
+        return (self.is_cross_solved and
+                self.red[3]    == 0x01 and
+                self.red[5]    == 0x01 and
+                self.green[3]  == 0x04 and
+                self.green[5]  == 0x04 and
+                self.orange[3] == 0x00 and
+                self.orange[5] == 0x00 and
+                self.blue[3]   == 0x05 and
+                self.blue[5]   == 0x05)
+
+    def is_oll_solved(self):
+        return self.yellow == [0x02] * 9
+
     def print_state_bytes(self):
         print(*self.white)
         print(*self.red)
