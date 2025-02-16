@@ -36,8 +36,8 @@ class MainWindow(tk.Tk):
         self.battery_level = tk.StringVar(value="Battery: N/A")
         ttk.Label(main_frame, textvariable=self.battery_level).grid(column=1, row=0)
 
-        ttk.Button(main_frame, text="Sync to solved", command=self.sync_to_solved).grid(column=0, row=1)
-        ttk.Button(main_frame, text="Start solve", command=self.start_solve).grid(column=1, row=1)
+        ttk.Button(main_frame, text="Sync to solved", command=self.sync_to_solved, takefocus=0).grid(column=0, row=1)
+        ttk.Button(main_frame, text="Start solve", command=self.start_solve, takefocus=0).grid(column=1, row=1)
 
         # Cube faces
         self.cube_frame = tk.Frame(main_frame)
@@ -67,11 +67,13 @@ class MainWindow(tk.Tk):
         self.total_time = tk.StringVar(value="N/A")
         ttk.Label(main_frame, textvariable=self.total_time).grid(column=0, row=4)
 
+        self.root.bind("<space>", self.start_solve)
+
     def sync_to_solved(self):
         if global_state.cube_comm is not None:
             asyncio.create_task(global_state.cube_comm.send_state_sync(CubeState()))
 
-    def start_solve(self):
+    def start_solve(self, _ = None):
         print("Solve mode, make a move to start timer")
         self.ready_to_solve = True
 
