@@ -45,12 +45,20 @@ class CubeState:
 
     def is_f2l_solved(self):
         return (self.is_cross_solved and
+                self.red[0]    == 0x01 and
+                self.red[2]    == 0x01 and
                 self.red[3]    == 0x01 and
                 self.red[5]    == 0x01 and
+                self.green[0]  == 0x04 and
+                self.green[2]  == 0x04 and
                 self.green[3]  == 0x04 and
                 self.green[5]  == 0x04 and
+                self.orange[0] == 0x00 and
+                self.orange[2] == 0x00 and
                 self.orange[3] == 0x00 and
                 self.orange[5] == 0x00 and
+                self.blue[0]   == 0x05 and
+                self.blue[2]   == 0x05 and
                 self.blue[3]   == 0x05 and
                 self.blue[5]   == 0x05)
 
