@@ -10,28 +10,22 @@ class SolveResult:
         results = dict()
 
         for timestamp,state in self.move_list.items():
-            print(timestamp)
-            state.print_state_bytes()
             if state.is_cross_solved():
                 if "cross_time" not in results.keys():
-                    print("cross")
                     cross_timestamp = timestamp
                     results["cross_time"] = cross_timestamp - start_time
 
                 if state.is_f2l_solved():
                     if "f2l_time" not in results.keys():
-                        print("f2l")
                         f2l_timestamp = timestamp
                         results["f2l_time"] = f2l_timestamp - cross_timestamp
 
                     if state.is_oll_solved():
                         if "oll_time" not in results.keys():
-                            print("oll")
                             oll_timestamp = timestamp
                             results["oll_time"] = oll_timestamp - f2l_timestamp
 
                         if state.is_solved():
-                            print("solved")
                             results["pll_time"] = timestamp - oll_timestamp
                             results["total_time"] = timestamp - start_time
 

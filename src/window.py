@@ -103,7 +103,6 @@ class MainWindow(tk.Tk):
 
         if self.current_solve_result is not None:
             self.current_solve_result.add_move(timestamp, state)
-            self.current_timestamp.set(self.current_solve_result.get_time())
             # Check solved
             if state.is_solved():
                 # Clear previous move list
