@@ -110,11 +110,13 @@ class CubeComm:
             if decrypted_data[2] == 0x03 or decrypted_data[2] == 0x04:
                 state = CubeState()
 
+                timestamp = round(((decrypted_data[3] << 24) + (decrypted_data[4] << 16) + (decrypted_data[5] << 8) + decrypted_data[6]) / 1.6)
+
                 if len(decrypted_data) > 91 and decrypted_data[91] != 1:
                     # If needs ack then we should ignore response state and assume solved
                     state.decode(decrypted_data[7:34])
 
-                global_state.main_window.new_cube_state(state)
+                global_state.main_window.new_cube_state(state, timestamp)
 
 
     async def setup_notifications(self):

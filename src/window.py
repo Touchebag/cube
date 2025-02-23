@@ -8,32 +8,17 @@ from dataclasses import dataclass
 
 from message import CubeComm
 from cubestate import CubeState
+from solve_result import SolveResult
 
 import global_state
-
-@dataclass
-class SolveTime():
-    # Total time
-    start_timestamp = None
-    finished_timestamp = None
-
-    # Splits
-    crs_timestamp = None
-    f2l_timestamp = None
-    oll_timestamp = None
-
-class SolvedResult():
-    total = None
-    cross = None
-    f2l = None
-    oll = None
 
 class MainWindow(tk.Tk):
     cube_frame = None
     cube_faces = []
 
-    current_solve_time = None
-    prev_solve_time = None
+    current_solve_start = None
+    current_solve_result = None
+    prev_solve_result = None
 
     # Used to close loop and shutdown program
     close = False
@@ -110,48 +95,30 @@ class MainWindow(tk.Tk):
 
     def start_solve(self, _ = None):
         print("Solve mode, make a move to start timer")
-        self.current_solve_time = SolveTime()
+        self.current_solve_result = SolveResult()
 
-    def new_cube_state(self, state: CubeState):
-        # If ready to solve
-        if self.current_solve_time is not None:
-            # Start solve
-            if self.current_solve_time.start_timestamp is None:
-                self.current_solve_time.start_timestamp = time.time()
+    def new_cube_state(self, state: CubeState, timestamp = None):
+        if self.current_solve_result is not None and not self.current_solve_result.move_list:
+            self.current_solve_start = time.time()
 
-            # Check cross
-            if self.current_solve_time.crs_timestamp is None and state.is_cross_solved():
-                print("Cross solved")
-                self.current_solve_time.crs_timestamp = time.time()
-
-            # Check f2l
-            if self.current_solve_time.f2l_timestamp is None and state.is_f2l_solved():
-                print("F2l solved")
-                self.current_solve_time.f2l_timestamp = time.time()
-
-            # Check OLL
-            if self.current_solve_time.oll_timestamp is None and state.is_oll_solved():
-                print("OLL solved")
-                self.current_solve_time.oll_timestamp = time.time()
-
+        if self.current_solve_result is not None:
+            self.current_solve_result.add_move(timestamp, state)
+            self.current_timestamp.set(self.current_solve_result.get_time())
             # Check solved
             if state.is_solved():
-                self.current_solve_time.finished_timestamp = time.time()
+                # Clear previous move list
+                self.sync_to_solved()
+                self.current_solve_start = None
+                self.prev_solve_result = self.current_solve_result
+                self.current_solve_result = None
 
-                self.prev_solve_time = SolvedResult()
-                self.prev_solve_time.total = max(0, self.current_solve_time.finished_timestamp - self.current_solve_time.start_timestamp)
-                self.prev_solve_time.cross = max(0, self.current_solve_time.crs_timestamp - self.current_solve_time.start_timestamp)
-                self.prev_solve_time.f2l   = max(0, self.current_solve_time.f2l_timestamp - self.current_solve_time.crs_timestamp)
-                self.prev_solve_time.oll   = max(0, self.current_solve_time.oll_timestamp - self.current_solve_time.f2l_timestamp)
-                self.prev_solve_time.pll   = max(0, self.current_solve_time.finished_timestamp - self.current_solve_time.oll_timestamp)
+                results = self.prev_solve_result.get_results()
 
-                self.current_solve_time = None
-
-                self.prev_total_time.set(self.print_time(self.prev_solve_time.total))
-                self.prev_crs_time.set(self.print_time(self.prev_solve_time.cross) + " (" + str(round(100 * self.prev_solve_time.cross / self.prev_solve_time.total, 2)) + "%)")
-                self.prev_f2l_time.set(self.print_time(self.prev_solve_time.f2l) + " (" + str(round(100 * self.prev_solve_time.f2l / self.prev_solve_time.total, 2)) + "%)")
-                self.prev_oll_time.set(self.print_time(self.prev_solve_time.oll) + " (" + str(round(100 * self.prev_solve_time.oll / self.prev_solve_time.total, 2)) + "%)")
-                self.prev_pll_time.set(self.print_time(self.prev_solve_time.pll) + " (" + str(round(100 * self.prev_solve_time.pll / self.prev_solve_time.total, 2)) + "%)")
+                self.prev_total_time.set(self.print_time(results["total_time"] / 1000))
+                self.prev_crs_time.set(self.print_time(results["cross_time"] / 1000) + " (" + str(round(100 * results["cross_time"] / results["total_time"], 2)) + "%)")
+                self.prev_f2l_time.set(self.print_time(results["f2l_time"] / 1000) + " (" + str(round(100 * results["f2l_time"] / results["total_time"], 2)) + "%)")
+                self.prev_oll_time.set(self.print_time(results["oll_time"] / 1000) + " (" + str(round(100 * results["oll_time"] / results["total_time"], 2)) + "%)")
+                self.prev_pll_time.set(self.print_time(results["pll_time"] / 1000) + " (" + str(round(100 * results["pll_time"] / results["total_time"], 2)) + "%)")
 
         self.draw_cube_face(self.cube_faces[0], state.white)
         self.draw_cube_face(self.cube_faces[1], state.orange)
@@ -183,8 +150,9 @@ class MainWindow(tk.Tk):
         self.root.destroy()
 
     def render(self):
-        if (self.current_solve_time is not None and
-            self.current_solve_time.start_timestamp is not None):
-                self.current_time.set(self.print_time(time.time() - self.current_solve_time.start_timestamp))
+        if self.current_solve_start is not None :
+            self.current_time.set(self.print_time(time.time() - self.current_solve_start))
+        else:
+            self.current_time.set("N/A")
         self.root.update()
 
