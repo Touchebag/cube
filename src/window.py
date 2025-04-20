@@ -40,7 +40,8 @@ class MainWindow(tk.Tk):
         ttk.Label(main_frame, textvariable=self.battery_level).grid(column=1, row=0)
 
         ttk.Button(main_frame, text="Sync to solved", command=self.sync_to_solved, takefocus=0).grid(column=0, row=1)
-        ttk.Button(main_frame, text="Start solve", command=self.start_solve, takefocus=0).grid(column=1, row=1)
+        self.solving_text = tk.StringVar(value="Start solve")
+        ttk.Button(main_frame, textvariable=self.solving_text, command=self.start_solve, takefocus=0).grid(column=1, row=1)
 
         # Cube faces
         self.cube_frame = tk.Frame(main_frame)
@@ -96,8 +97,12 @@ class MainWindow(tk.Tk):
     def start_solve(self, _ = None):
         print("Solve mode, make a move to start timer")
         self.current_solve_result = SolveResult()
+        self.solving_text.set("Ready to solve")
 
     def new_cube_state(self, state: CubeState, timestamp = None):
+        if self.solving_text.get() == "Ready to solve":
+            self.solving_text.set("Solving")
+
         if self.current_solve_result is not None and not self.current_solve_result.move_list:
             self.current_solve_start = time.time()
 
@@ -105,6 +110,7 @@ class MainWindow(tk.Tk):
             self.current_solve_result.add_move(timestamp, state)
             # Check solved
             if state.is_solved():
+                self.solving_text.set("Start solve")
                 # Clear previous move list
                 self.sync_to_solved()
                 self.current_solve_start = None
